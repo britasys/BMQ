@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## Application Configurations                                                   ##
 ##################################################################################
 
-set(APP_NAME "cppagent")
+set(APP_NAME "bmq")
 set(APP_SOURCE_DIR ./src)
 set(APP_EXTERNAL_DIR ./extern)
 
@@ -32,6 +32,7 @@ project(${APP_NAME} VERSION 1.0)
 file(GLOB_RECURSE APP_SOURCE_FILES CONFIGURE_DEPENDS ${APP_SOURCE_DIR}/*.cpp ${APP_SOURCE_DIR}/*. hpp)
 
 add_executable(${APP_NAME} ${APP_SOURCE_FILES})
+target_include_directories(${APP_NAME} PRIVATE ${APP_SOURCE_DIR})
 
 ##################################################################################
 ## External Projects                                                            ##
