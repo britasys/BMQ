@@ -13,6 +13,10 @@
 
 namespace bmq
 {
+    //////////////////////////////////////////////////////////////////
+    // BMQ_MESSAGE                                                  //
+    //////////////////////////////////////////////////////////////////
+
     template <typename INPUT, typename OUTPUT, typename INPUT_INIT, typename OUTPUT_INIT>
     struct _bmq_node
     {
@@ -40,6 +44,9 @@ namespace bmq
         std::shared_ptr<INPUT> pInput{};
         std::shared_ptr<OUTPUT> pOutput{};
     };
+
+    template <typename INPUT, typename OUTPUT, typename INPUT_INIT, typename OUTPUT_INIT>
+    using NMQ_NODE = _bmq_node<INPUT, OUTPUT, INPUT_INIT, OUTPUT_INIT>;
 } // !bmq
 
 #endif //!__H_NODE__
