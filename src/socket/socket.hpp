@@ -7,23 +7,10 @@
 
 #include <string>
 #include <deque>
+#include <vector>
 
 namespace bmq
 {
-    //////////////////////////////////////////////////////////////////
-    // BMQ_MESSAGE                                                  //
-    //////////////////////////////////////////////////////////////////
-
-    typedef struct _bmq_message
-    {
-        _bmq_message(const std::string &data)
-        {
-            this->message = zmq::message_t{data};
-        }
-
-        zmq::message_t message{};
-    } BMQ_MESSAGE, *LP_BMQ_MESSAGE, **LPP_BMQ_MESSAGE;
-
     //////////////////////////////////////////////////////////////////
     // BMQ_SOCKET                                                   //
     //////////////////////////////////////////////////////////////////
@@ -61,6 +48,20 @@ namespace bmq
             this->endpoints = endpoints;
             for (const auto &endpoint : this->endpoints)
                 this->socket.bind(endpoint);
+        }
+
+        void send(const std::string& data)
+        {
+            auto l_result = this->socket.send(zmq::buffer(data), zmq::send_flags::none);
+        }
+
+        void recv(std::string& data)
+        {
+            std::vector<char> l_data(1024);
+            zmq::mutable_buffer mbuf = zmq::buffer(l_data);
+            auto l_result = this->socket.recv(mbuf, zmq::recv_flags::none);
+
+            data.assign(std::string{ (char*)(mbuf.data()) });
         }
 
     private:

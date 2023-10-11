@@ -32,12 +32,12 @@ namespace bmq
             this->pInput = std::make_shared<INPUT>(input_init);
             this->pOutput = std::make_shared<OUTPUT>(output_init);
 
-            this->pInput.register(this->pOutput);
+            this->pInput.registerOutput(this->pOutput);
         }
 
-        void run() const noexcept
+        bool run() const noexcept
         {
-            this->pInput->run();
+            return this->pInput->run();
         }
 
     private:
