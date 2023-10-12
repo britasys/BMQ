@@ -65,7 +65,11 @@ namespace bmq
                                     {
                                         spdlog::info("hi");
                                         res.set_content("Hello World!", "text/plain");
-                                        this->pSocket_req->send("Hello World!"); });
+                                        
+                                        this->pSocket_req->send("Hello World!");
+
+                                        std::string message{};
+                                        this->pSocket_req->recv(message); });
 
             this->pServer_rest->Get("/stop", [&](const httplib::Request &req, httplib::Response &res)
                                     {
@@ -97,7 +101,10 @@ namespace bmq
         {
             spdlog::info("_bmq_node_server");
 
-            this->pClient_rest = std::make_shared<httplib::Client>(init.url);
+            this->pClient_rest = std::make_shared<httplib::Client>(init.endpoint, init.endpoint_port);
+
+            BMQ_SOCKET_INIT l_init_socket{init.uiThreadCount, init.url};
+            this->pSocket_rep = std::make_shared<BMQ_SOCKET_REP>(l_init_socket);
         }
 
         void run() noexcept final
@@ -110,7 +117,8 @@ namespace bmq
                 this->pSocket_rep->recv(message);
                 this->pSocket_rep->send("OK");
 
-                this->pClient_rest->Post("/hi");
+                spdlog::info("message - {}", message);
+                // this->pClient_rest->Post("/hi");
             }
         }
 
