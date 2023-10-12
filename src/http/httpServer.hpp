@@ -16,6 +16,7 @@ namespace bmq
         unsigned short int port{};
         std::string path{};
     } BMQ_HTTP_SERVER_INIT;
+
     typedef struct _bmq_http_server
     {
         _bmq_http_server() = delete;

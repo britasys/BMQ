@@ -6,8 +6,8 @@
 #include <zmq.hpp>
 
 #include <string>
-#include <deque>
 #include <vector>
+#include <memory>
 
 namespace bmq
 {
@@ -18,7 +18,7 @@ namespace bmq
     typedef struct _bmq_socket_init
     {
         unsigned short int uiThreadCount{1};
-        std::deque<std::string> endpoints{};
+        std::string url{};
     } BMQ_SOCKET_INIT, *LP_BMQ_SOCKET_INIT, **LPP_BMQ_SOCKET_INIT;
 
     typedef struct _bmq_socket
@@ -31,11 +31,8 @@ namespace bmq
         _bmq_socket &operator=(_bmq_socket &&) noexcept = delete;
         virtual ~_bmq_socket()
         {
-            for (const auto &endpoint : this->endpoints)
-            {
-                this->socket.unbind(endpoint);
-                this->socket.disconnect(endpoint);
-            }
+            this->pSocket->unbind(this->endpoint);
+            // this->pSocket->disconnect(this->endpoint);
 
             // this->m_context.shutdown();
             // this->m_context.close();
@@ -43,31 +40,32 @@ namespace bmq
 
         explicit _bmq_socket(const BMQ_SOCKET_INIT &init, zmq::socket_type type)
         {
-            this->socket = zmq::socket_t(context, type);
+            this->endpoint.assign(init.url);
 
-            this->endpoints = endpoints;
-            for (const auto &endpoint : this->endpoints)
-                this->socket.bind(endpoint);
-        }
-
-        void send(const std::string& data)
-        {
-            auto l_result = this->socket.send(zmq::buffer(data), zmq::send_flags::none);
-        }
-
-        void recv(std::string& data)
-        {
-            std::vector<char> l_data(1024);
-            zmq::mutable_buffer mbuf = zmq::buffer(l_data);
-            auto l_result = this->socket.recv(mbuf, zmq::recv_flags::none);
-
-            data.assign(std::string{ (char*)(mbuf.data()) });
+            this->pContext = std::make_shared<zmq::context_t>();
+            this->pSocket = std::make_shared<zmq::socket_t>(*(this->pContext.get()), type);
+            this->pSocket->bind(this->endpoint);
         }
 
     private:
-        static zmq::context_t context;
-        zmq::socket_t socket{};
-        std::deque<std::string> endpoints{};
+        std::shared_ptr<zmq::context_t> pContext{};
+        std::shared_ptr<zmq::socket_t> pSocket{};
+        std::string endpoint{};
+
+    public:
+        void send(const std::string &data)
+        {
+            auto l_result = this->pSocket->send(zmq::buffer(data), zmq::send_flags::none);
+        }
+
+        void recv(std::string &data)
+        {
+            std::vector<char> l_data(1024);
+            zmq::mutable_buffer mbuf = zmq::buffer(l_data);
+            auto l_result = this->pSocket->recv(mbuf, zmq::recv_flags::none);
+
+            data.assign(std::string{(char *)(mbuf.data())});
+        }
     } BMQ_SOCKET, *LP_BMQ_SOCKET, **LPP_BMQ_SOCKET;
 
     //////////////////////////////////////////////////////////////////

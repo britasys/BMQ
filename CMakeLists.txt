@@ -44,7 +44,18 @@ set(BUILD_EXAMPLES  OFF CACHE BOOL "BUILD_EXAMPLES" FORCE)
 
 include(FetchContent)
 
-## spdlog
+# Argh
+FetchContent_Declare(
+    argh
+    GIT_REPOSITORY      https://github.com/adishavit/argh.git
+    GIT_TAG             v1.3.2
+    SOURCE_DIR          ../${APP_EXTERNAL_DIR}/argh
+)
+FetchContent_MakeAvailable(argh)
+target_link_libraries(${APP_NAME} PRIVATE argh)
+target_include_directories(${APP_NAME} PRIVATE ${${argh_INCLUDE_DIR}})
+
+# spdlog
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY      https://github.com/gabime/spdlog.git
