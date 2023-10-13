@@ -3,7 +3,7 @@
 #ifndef __H_NODE__
 #define __H_NODE__
 
-#include <spdlog/spdlog.h>
+#include <log.hpp>
 
 #include <socket/socket.hpp>
 #include <httplib.h>
@@ -20,9 +20,9 @@ namespace bmq
 
     typedef struct _bmq_node_init
     {
-        unsigned short int uiThreadCount{1};
         std::string endpoint{};
         unsigned short int endpoint_port{};
+        std::string endpoint_path{};
         std::string url{};
     } BMQ_NODE_INIT;
 
@@ -54,32 +54,28 @@ namespace bmq
 
         explicit _bmq_node_client(const BMQ_NODE_INIT &init) : _bmq_node(init)
         {
-            spdlog::info("_bmq_node_client");
-
-            this->pServer_rest = std::make_shared<httplib::Server>();
-
-            BMQ_SOCKET_INIT l_init_socket{init.uiThreadCount, init.url};
+            BMQ_SOCKET_INIT l_init_socket{init.url};
             this->pSocket_req = std::make_shared<BMQ_SOCKET_REQ>(l_init_socket);
 
+            this->pServer_rest = std::make_shared<httplib::Server>();
             this->pServer_rest->Get("/hi", [this](const httplib::Request &req, httplib::Response &res)
-                                    {
-                                        spdlog::info("hi");
-                                        res.set_content("Hello World!", "text/plain");
-                                        
-                                        this->pSocket_req->send("Hello World!");
-
-                                        std::string message{};
-                                        this->pSocket_req->recv(message); });
+                                    { res.set_content("Hello World!", "text/plain"); });
 
             this->pServer_rest->Get("/stop", [&](const httplib::Request &req, httplib::Response &res)
-                                    {
-                    spdlog::info("stop");
-                    pServer_rest->stop(); });
+                                    { this->pServer_rest->stop(); });
+
+            this->pServer_rest->Post(init.endpoint_path, [this](const httplib::Request &req, httplib::Response &res)
+                                     {
+                                        INFO("Message recieved - {}", req.body);
+                                        std::string l_res_socket{};
+                                        this->pSocket_req->send(req.body);
+                                        this->pSocket_req->recv(l_res_socket);
+                                        res.set_content(l_res_socket, "text/plain"); });
         }
 
         void run() noexcept final
         {
-            spdlog::info("run");
+            INFO("Node is running...");
             this->pServer_rest->listen(this->init.endpoint, this->init.endpoint_port);
         }
 
@@ -99,26 +95,36 @@ namespace bmq
 
         explicit _bmq_node_server(const BMQ_NODE_INIT &init) : _bmq_node(init)
         {
-            spdlog::info("_bmq_node_server");
-
             this->pClient_rest = std::make_shared<httplib::Client>(init.endpoint, init.endpoint_port);
 
-            BMQ_SOCKET_INIT l_init_socket{init.uiThreadCount, init.url};
+            BMQ_SOCKET_INIT l_init_socket{init.url};
             this->pSocket_rep = std::make_shared<BMQ_SOCKET_REP>(l_init_socket);
         }
 
         void run() noexcept final
         {
-            spdlog::info("run");
+            INFO("Node is running...");
 
             while (true)
             {
                 std::string message{};
                 this->pSocket_rep->recv(message);
-                this->pSocket_rep->send("OK");
+                INFO("Message recieved - {}", message);
 
-                spdlog::info("message - {}", message);
-                // this->pClient_rest->Post("/hi");
+                // auto l_result = this->pClient_rest->Post(this->init.endpoint_path, message.c_str(), message.size(), "text/plain");
+                auto l_result = this->pClient_rest->Post(this->init.endpoint_path);
+                if (l_result)
+                {
+                    if (200 == l_result->status)
+                        this->pSocket_rep->send(l_result->body);
+                    else
+                        this->pSocket_rep->send(std::to_string(l_result->status));
+                }
+                else
+                {
+                    auto err = l_result.error();
+                    this->pSocket_rep->send(httplib::to_string(err));
+                }
             }
         }
 

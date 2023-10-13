@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
   if (cmdl[{"-c", "--client"}])
   {
     bmq::BMQ_NODE_INIT l_init{
-        5,
         "192.168.1.102",
         5050,
+        "/data",
         "ipc://test"};
     bmq::BMQ_NODE_CLIENT l_node{l_init};
     l_node.run();
@@ -28,9 +28,9 @@ int main(int argc, char *argv[])
   if (cmdl[{"-s", "--server"}])
   {
     bmq::BMQ_NODE_INIT l_init{
-        5,
-        "192.168.1.100",
-        5051,
+        "jsonplaceholder.typicode.com",
+        80,
+        "/posts",
         "ipc://test"};
     bmq::BMQ_NODE_SERVER l_node{l_init};
     l_node.run();
